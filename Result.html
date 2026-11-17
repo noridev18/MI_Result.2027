@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <title>MI Result Hub - كشف النقاط الرسمي</title>
+    <style>
+        :root {
+            --primary: #020617;
+            --accent: #d4af37;
+            --blue: #38bdf8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --card-bg: rgba(15, 23, 42, 0.9);
+        }
+
+        /* تنسيق عام وخلفية 3D */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #020617;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #f8fafc;
+            overflow-x: hidden;
+            perspective: 1200px; /* لزيادة عمق الـ 3D */
+        }
+
+        .bg-3d {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
+            z-index: -1;
+        }
+
+        /* حاوية النجوم/الجزيئات في الخلفية */
+        #stars-container {
+            position: absolute;
+            width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            animation: rotateBG 30s linear infinite;
+        }
+        @keyframes rotateBG {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        /* تصميم الكارت المتناسق */
+        .card {
+            position: relative;
+            z-index: 10;
+            width: 800px; /* عرض مثالي للحاسوب */
+            max-width: 90%; /* تجاوب مع الهاتف */
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 2.5rem;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
+            transform: translateZ(50px);
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateZ(-100px); }
+            to { opacity: 1; transform: translateZ(50px); }
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 { margin: 0; color: var(--accent); font-size: 2rem; }
+
+        /* شبكة المعلومات المتجاوبة */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2x2 في الحاسوب */
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* تعديل التنسيق للهواتف (انسجام العرض) */
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr; /* عمود واحد في الهاتف لسهولة القراءة */
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .avg-val {
+                font-size: 3.5rem !important;
+            }
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
+        }
+        .info-box:hover { transform: translateY(-5px); border-color: var(--blue); }
+
+        .label { font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.3rem; }
+        .value { font-weight: bold; color: var(--blue); font-size: 1.1rem; }
+
+        /* منطقة النتيجة */
+        .result-zone {
+            text-align: center;
+            padding: 2.5rem;
+            background: rgba(2, 6, 23, 0.7);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .emoji-box { font-size: 5rem; margin-bottom: 1rem; display: inline-block; }
+        
+        /* أنيميشن الرموز */
+        .crown-anim { animation: crown 2s infinite ease-in-out; }
+        @keyframes crown {
+            0%, 100% { transform: scale(1) rotate(-5deg); filter: drop-shadow(0 0 15px gold); }
+            50% { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 35px gold); }
+        }
+
+        .eggplant-anim { animation: eggplant 1.5s infinite ease-in-out; }
+        @keyframes eggplant {
+            0%, 100% { transform: translateY(0) rotate(-10deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        .avg-val { font-size: 5rem; font-weight: 900; color: var(--accent); margin: 0; }
+        .status-text { font-size: 1.8rem; font-weight: bold; margin-top: 0.5rem; }
+
+        /* الرسالة التحفيزية */
+        .motivation-card {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px dashed var(--accent);
+            padding: 1rem;
+            border-radius: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .actions { margin-top: 2rem; display: flex; gap: 1rem; }
+        .btn-back {
+            flex: 1; padding: 1rem;
+            background: #334155; color: white; border-radius: 12px;
+            text-decoration: none; font-weight: bold; text-align: center;
+            transition: 0.3s;
+        }
+        .btn-back:hover { background: #475569; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-3d">
+        <div id="stars-container"></div>
+    </div>
+
+    <div class="card">
+        <div class="header">
+            <h1 id="title">كشف النقاط الرسمي</h1>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box"><div class="label" data-t="name">الاسم الكامل</div><div class="value" id="name">---</div></div>
+            <div class="info-box"><div class="label" data-t="reg">رقم التسجيل</div><div class="value" id="reg">---</div></div>
+            <div class="info-box"><div class="label" data-t="major">التخصص</div><div class="value" id="major">---</div></div>
+            <div class="info-box"><div class="label" data-t="year">السنة الجامعية</div><div class="value" id="year">---</div></div>
+            <div class="info-box"><div class="label" data-t="level">المستوى</div><div class="value" id="level">---</div></div>
+            <div class="info-box"><div class="label" data-t="semester">السداسي</div><div class="value" id="semester">---</div></div>
+        </div>
+
+        <div class="result-zone">
+            <div id="emoji-container" class="emoji-box"></div>
+            <div class="avg-val" id="avg">0.00</div>
+            <div id="status" class="status-text">---</div>
+        </div>
+
+        <div id="motivation" class="motivation-card">---</div>
+
+        <div class="actions">
+            <a href="index.html" class="btn-back" data-t="back">رجوع لتعديل البيانات</a>
+        </div>
+    </div>
+
+    <script>
+        const LANG = (localStorage.getItem("lang") === "en") ? "en" : "ar";
+        const T = {
+            ar: { docTitle: "MI Result Hub - كشف النقاط الرسمي", title: "كشف النقاط الرسمي", name: "الاسم الكامل", reg: "رقم التسجيل", major: "التخصص", year: "السنة الجامعية", level: "المستوى", semester: "السداسي", back: "رجوع لتعديل البيانات", na: "غير متوفر", pass: "ناجح ✔", fail: "راسب ✖", passMsg: "⭐ استمر في التألق، القمة تليق بك! ⭐", failMsg: "💪 الفشل محطة للبداية، حاول مجدداً وستصل! 💪", lvlL1: "L1 — السنة الأولى", lvlL2: "L2 — السنة الثانية", semWord: "السداسي" },
+            en: { docTitle: "MI Result Hub - Official Grade Report", title: "Official Grade Report", name: "Full Name", reg: "Reg Number", major: "Major", year: "Academic Year", level: "Level", semester: "Semester", back: "Back to edit data", na: "Not available", pass: "Passed ✔", fail: "Failed ✖", passMsg: "⭐ Keep shining, the top suits you! ⭐", failMsg: "💪 Failure is a starting point, try again and you will get there! 💪", lvlL1: "L1 — First year", lvlL2: "L2 — Second year", semWord: "Semester" }
+        }[LANG];
+
+        // Selections transferred from index.html (validated; anything unexpected is shown as ---)
+        const YEARS = ["2026/2027", "2027/2028", "2028/2029", "2029/2030", "2030/2031"];
+        const LEVEL_SEMESTERS = { L1: ["S1", "S2"], L2: ["S3", "S4"] };
+
+        // Result sounds (local files, no controls, no UI). Only the matching file is loaded.
+        const AUDIO_SRC = { success: "assets/success.mp3", fail: "assets/fail.mp3", fail1: "assets/fail1.mp3"};
+        let resultAudio = null;
+        let gestureArmed = false;
+        let lastPassed = null;
+
+        function stopResultSound() {
+            if (resultAudio) {
+                resultAudio.onended = null; resultAudio.onerror = null;
+                resultAudio.pause();
+                resultAudio.removeAttribute("src");
+                resultAudio.load();
+                resultAudio = null;
+            }
+        }
+        function armGestureFallback(audio) {
+            if (gestureArmed) return;
+            gestureArmed = true;
+            const events = ["pointerdown", "touchstart", "keydown", "click"];
+            const go = () => {
+                events.forEach(ev => document.removeEventListener(ev, go, true));
+                gestureArmed = false;
+                if (resultAudio === audio && audio.paused && !audio.ended) {
+                    audio.play().catch(err => console.warn("[audio] playback failed:", err));
+                }
+            };
+            events.forEach(ev => document.addEventListener(ev, go, true));
+        }
+       function playResultSound(isPassed) {
+    stopResultSound();
+
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.controls = false;
+
+    resultAudio = audio;
+
+    audio.onerror = () => {
+        console.warn("[audio] failed:", audio.currentSrc);
+    };
+
+    if (isPassed) {
+        audio.src = AUDIO_SRC.success;
+    } else {
+        audio.src = AUDIO_SRC.fail;
+
+        audio.onended = async () => {
+            audio.onended = null;
+
+            if (resultAudio !== audio) return;
+
+            const secondAudio = new Audio(AUDIO_SRC.fail1);
+            secondAudio.preload = "auto";
+            secondAudio.controls = false;
+
+            resultAudio = secondAudio;
+
+            try {
+                await secondAudio.play();
+            } catch (err) {
+                console.warn("[audio] second sound failed:", err);
+            }
+        };
+    }
+
+    audio.play().catch(err => {
+        if (err && err.name === "NotAllowedError") {
+            armGestureFallback(audio);
+        } else if (!err || err.name !== "AbortError") {
+            console.warn("[audio] playback failed:", err);
+        }
+    });
+}
+        window.addEventListener("pagehide", stopResultSound);
+        window.addEventListener("pageshow", e => { if (e.persisted && lastPassed !== null) playResultSound(lastPassed); });
+
+        function init() {
+            document.documentElement.lang = LANG;
+            document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+            document.title = T.docTitle;
+            document.querySelectorAll("[data-t]").forEach(e => e.innerText = T[e.dataset.t]);
+            document.getElementById("title").innerText = T.title;
+
+            // جلب البيانات المخزنة
+            const avg = parseFloat(localStorage.getItem("avg")) || 0;
+            const name = localStorage.getItem("name") || T.na;
+            const reg = localStorage.getItem("reg") || "---";
+            const major = localStorage.getItem("major") || "---";
+            const isPassed = avg >= 10;
+            lastPassed = isPassed;
+
+            const yearRaw = localStorage.getItem("mihub_year");
+            const levelRaw = localStorage.getItem("mihub_level");
+            const semRaw = localStorage.getItem("mihub_semester");
+            const levelOk = Object.prototype.hasOwnProperty.call(LEVEL_SEMESTERS, levelRaw);
+            const semOk = levelOk && LEVEL_SEMESTERS[levelRaw].includes(semRaw);
+            const year = YEARS.includes(yearRaw) ? yearRaw : "---";
+            const level = levelOk ? T["lvl" + levelRaw] : "---";
+            const semester = semOk ? T.semWord + " " + semRaw.slice(1) + " (" + semRaw + ")" : "---";
+
+            // توزيع البيانات في الصفحة
+            document.getElementById("name").innerText = name;
+            document.getElementById("reg").innerText = reg;
+            document.getElementById("major").innerText = major;
+            document.getElementById("year").innerText = year;
+            document.getElementById("level").innerText = level;
+            document.getElementById("semester").innerText = semester;
+            document.getElementById("avg").innerText = avg.toFixed(2);
+
+            const st = document.getElementById("status");
+            const emojiCont = document.getElementById("emoji-container");
+            const msgCont = document.getElementById("motivation");
+
+            if(isPassed) {
+                st.innerText = T.pass; st.style.color = "var(--success)";
+                emojiCont.innerText = "👑"; emojiCont.className = "emoji-box crown-anim";
+                msgCont.innerText = T.passMsg;
+            } else {
+                st.innerText = T.fail; st.style.color = "var(--danger)";
+                emojiCont.innerText = "🤲🏻🙏🏻"; emojiCont.className = "emoji-box eggplant-anim";
+                msgCont.innerText = T.failMsg;
+            }
+
+            playResultSound(isPassed);
+
+            // إنشاء تأثير النجوم ثلاثي الأبعاد في الخلفية
+            const container = document.getElementById("stars-container");
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement("div");
+                star.style.position = "absolute";
+                star.style.width = "2px";
+                star.style.height = "2px";
+                star.style.background = "white";
+                star.style.borderRadius = "50%";
+
+                // توزيع عشوائي في الفضاء ثلاثي الأبعاد
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 2000;
+
+                star.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(${z}px)`;
+                star.style.opacity = Math.random();
+                container.appendChild(star);
+            }
+        }
+        init();
+    </script>
+</body>
+</html>

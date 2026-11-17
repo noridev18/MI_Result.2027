@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حاسبة المعدل الجامعي - MI Result Hub </title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    :root {
+        --primary: #020617;
+        --accent: #d4af37;
+        --blue-soft: #38bdf8;
+        --card-bg: rgba(15, 23, 42, 0.85);
+        --danger: #ef4444;
+    }
+    body {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: var(--primary);
+        margin: 0; color: #f8fafc; min-height: 100vh; padding-bottom: 50px;
+        overflow-x: hidden;
+    }
+
+    #bg-canvas {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: -1;
+        opacity: 0.3;
+    }
+
+    header {
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(10px);
+        padding: 30px; text-align: center;
+        border-bottom: 3px solid var(--accent);
+        position: relative; z-index: 10;
+    }
+
+    main { max-width: 850px; margin: 30px auto; padding: 0 20px; position: relative; z-index: 10; }
+    h2 { color: var(--accent); border-right: 4px solid var(--accent); padding-right: 15px; margin-top: 40px; }
+    
+    .module {
+        background: var(--card-bg);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px; margin-bottom: 20px; border-radius: 15px;
+        transition: 0.3s ease; position: relative;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        perspective: 1000px;
+    }
+
+    .module-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+    
+    .coef-circle {
+        background: var(--accent); color: #000;
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        font-weight: bold; font-size: 14px;
+    }
+
+    .module h3 { 
+        color: var(--blue-soft) !important; 
+        margin: 0; 
+        font-size: 1.1rem; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        transform-style: preserve-3d;
+        display: inline-block;
+    }
+
+    .module:hover h3 {
+        color: var(--accent) !important;
+        transform: translateZ(30px) rotateX(10deg);
+        text-shadow: 0 5px 15px rgba(56, 189, 248, 0.4);
+    }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+    label { display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px; }
+    
+    input, select {
+        width: 100%; padding: 10px; background: #020617;
+        border: 1px solid #334155; border-radius: 6px; color: #fff; box-sizing: border-box;
+    }
+    input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    select { cursor: pointer; font-size: 13.3333px; text-overflow: ellipsis; }
+    select:disabled { opacity: 0.5; cursor: not-allowed; }
+    option { background: #0f172a; color: #fff; }
+    html { scroll-padding-bottom: 90px; }
+
+    .hint {
+        color: #94a3b8; text-align: center; padding: 30px 15px; margin: 0 0 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 15px;
+        background: var(--card-bg);
+    }
+    .err-msg { display: block; color: var(--danger); font-size: 0.75rem; margin-top: 4px; }
+    .err-msg:empty { display: none; }
+
+    .visitor-counter {
+        position: absolute; top: 20px;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 5px 12px; border-radius: 5px;
+        font-size: 0.75rem; z-index: 500;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .visitor-counter i { font-size: 1.2rem; }
+
+    [dir="rtl"] .visitor-counter { right: 20px; left: auto; }
+    [dir="ltr"] .visitor-counter { left: 20px; right: auto; }
+
+    .social-footer {
+        background: rgba(15, 23, 42, 0.95);
+        border-top: 1px solid var(--accent);
+        padding: 40px 20px; text-align: center; margin-top: 60px;
+    }
+    .footer-list {
+        display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 15px;
+    }
+    .contact-row {
+        display: flex; align-items: center; text-decoration: none; width: 100%; max-width: 280px; gap: 15px; transition: 0.3s;
+    }
+    .icon-box {
+        width: 45px; height: 45px; background: #020617; border: 1px solid var(--blue-soft);
+        color: var(--blue-soft); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .contact-text { color: #f8fafc; font-size: 1rem; }
+    .contact-row:hover .icon-box { background: var(--accent); color: #000; border-color: var(--accent); }
+    .contact-row:hover .contact-text { color: var(--accent); }
+
+    .sticky-actions {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 15px 20px; display: flex; gap: 15px;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 100;
+    }
+    button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-calc { background: var(--accent); color: #000; }
+    
+    .btn-lang {
+        background: transparent; border: 1px solid var(--accent); color: var(--accent);
+        padding: 5px 15px; position: absolute; top: 20px; z-index: 500; border-radius: 5px;
+    }
+    [dir="rtl"] .btn-lang { left: 20px; right: auto; }
+    [dir="ltr"] .btn-lang { right: 20px; left: auto; }
+
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="visitor-counter">
+    <i class="fas fa-users"></i>
+    <span data-t="visitors">الزوار</span>: <span id="count">...</span>
+</div>
+
+<button class="btn-lang" onclick="toggleLanguage()">AR / EN</button>
+
+<header>
+    <h1 data-t="title">University Semester Calculator</h1>
+    <p data-t="subtitle">Official Academic Record Generator</p>
+</header>
+
+<main>
+    <h2 data-t="personal">Student Identity</h2>
+    <div class="module">
+        <div class="grid">
+            <div><label data-t="name" for="studentName">Full Name</label><input id="studentName" enterkeyhint="next"></div>
+            <div><label data-t="reg" for="regNumber">Reg Number</label><input id="regNumber" enterkeyhint="next"></div>
+            <div><label data-t="major" for="majorInput">Major</label><input id="majorInput" value="Math et Informatique" readonly style="background: #1e293b; color: var(--accent);"></div>
+            <div><label data-t="year" for="yearInput">Year</label><select id="yearInput"></select></div>
+            <div><label data-t="level" for="levelInput">Level</label><select id="levelInput"></select></div>
+            <div><label data-t="semester" for="semesterInput">Semester</label><select id="semesterInput" disabled></select></div>
+        </div>
+    </div>
+
+    <h2 data-t="modules">Course Modules</h2>
+    <p id="modulesHint" class="hint" data-t="pickHint"></p>
+    <div id="defaultModules"></div>
+
+    <div class="sticky-actions">
+        <button class="btn-calc" onclick="calculate()" data-t="calc">Generate Certificate 📜</button>
+    </div>
+</main>
+
+<footer class="social-footer">
+    <p style="color:var(--accent); font-weight:bold;">: تواصل معنا عبر </p>
+    <div class="footer-list">
+        <a href="https://www.instagram.com/noureddine_officiel.08?igsh=MW94a3BoMThvbjB1Mw==" target="_blank" class="contact-row">
+            <div class="icon-box"><i class="fab fa-instagram"></i></div>
+            <span class="contact-text">Instagram</span>
+        </a>
+        <a href="https://t.me/kh_noureddine" target="_blank" class="contact-row">
+            <div class="icon-box"><i class="fab fa-telegram-plane"></i></div>
+            <span class="contact-text">Telegram</span>
+        </a>
+        <a href="mailto: university.noureddine@gmail.com" class="contact-row">
+            <div class="icon-box"><i class="fas fa-envelope"></i></div>
+            <span class="contact-text">Email Support</span>
+        </a>
+    </div>
+</footer>
+
+<script>
+let lang = localStorage.getItem('lang') || 'ar';
+
+// ===== Academic data (single source of truth) =====
+// 'fr' is the canonical (official) module name: internal reference only, never displayed.
+// eval: TD+TP+EX | TD+EX | TP+EX | EX
+const ACADEMIC_YEARS = ['2026/2027', '2027/2028', '2028/2029', '2029/2030', '2030/2031'];
+const DEFAULT_YEAR = ACADEMIC_YEARS[0];
+const ACADEMIC_DATA = {
+    L1: {
+        S1: [
+            { fr: 'Analyse 1', ar: 'تحليل 1', en: 'Analysis 1', coef: 4, credits: 6, eval: 'TD+EX', icon: '📊' },
+            { fr: 'Algèbre 1', ar: 'جبر 1', en: 'Algebra 1', coef: 2, credits: 4, eval: 'TD+EX', icon: '🧮' },
+            { fr: 'Algorithmique et structure de données 1', ar: 'الخوارزميات وبنية المعطيات 1', en: 'Algorithms and Data Structures 1', coef: 5, credits: 7, eval: 'TD+TP+EX', icon: '💻' },
+            { fr: 'Structure machine 1', ar: 'بنية الآلة 1', en: 'Machine Structure 1', coef: 3, credits: 5, eval: 'TD+EX', icon: '⌨️' },
+            { fr: 'Logiciels libres (Open source)', ar: 'البرمجيات الحرة (مفتوحة المصدر)', en: 'Free Software (Open Source)', coef: 1, credits: 2, eval: 'EX', icon: '📟' },
+            { fr: 'Histoire', ar: 'التاريخ', en: 'History', coef: 1, credits: 2, eval: 'EX', icon: '📚' },
+            { fr: 'Electricité générale', ar: 'الكهرباء العامة', en: 'General Electricity', coef: 2, credits: 4, eval: 'TD+EX', icon: '💡' }
+        ],
+        S2: [
+            { fr: 'Analyse 2', ar: 'تحليل 2', en: 'Analysis 2', coef: 4, credits: 6, eval: 'TD+EX', icon: '📊' },
+            { fr: 'Algèbre 2', ar: 'جبر 2', en: 'Algebra 2', coef: 2, credits: 4, eval: 'TD+EX', icon: '🧮' },
+            { fr: 'Algorithmique et structure de données 2', ar: 'الخوارزميات وبنية المعطيات 2', en: 'Algorithms and Data Structures 2', coef: 5, credits: 7, eval: 'TD+TP+EX', icon: '💻' },
+            { fr: 'Structure machine 2', ar: 'بنية الآلة 2', en: 'Machine Structure 2', coef: 3, credits: 5, eval: 'TD+EX', icon: '⌨️' },
+            { fr: 'Logique Mathématique', ar: 'المنطق الرياضي', en: 'Mathematical Logic', coef: 1, credits: 2, eval: 'TD+EX', icon: '🧩' },
+            { fr: "Introduction à l'intelligence artificielle", ar: 'مدخل إلى الذكاء الاصطناعي', en: 'Introduction to Artificial Intelligence', coef: 1, credits: 2, eval: 'TP+EX', icon: '🤖' },
+            { fr: 'Electronique fondamentale', ar: 'الإلكترونيك الأساسي', en: 'Fundamental Electronics', coef: 1, credits: 3, eval: 'TD+EX', icon: '🔌' },
+            { fr: 'Citoyenneté et patriotisme', ar: 'المواطنة والوطنية', en: 'Citizenship and Patriotism', coef: 1, credits: 1, eval: 'EX', icon: '🏛️' }
+        ]
+    },
+    L2: {
+        S3: [
+            { fr: 'Architecture des ordinateurs', ar: 'بنية الحواسيب', en: 'Computer Architecture', coef: 3, credits: 5, eval: 'TD+TP+EX', icon: '🖥️' },
+            { fr: 'Algorithmique et structure de données 3', ar: 'الخوارزميات وبنية المعطيات 3', en: 'Algorithms and Data Structures 3', coef: 4, credits: 6, eval: 'TD+TP+EX', icon: '💻' },
+            { fr: "Systèmes d'information", ar: 'نظم المعلومات', en: 'Information Systems', coef: 2, credits: 4, eval: 'TD+EX', icon: '🗂️' },
+            { fr: 'Programmation orientée objet 1', ar: 'البرمجة كائنية التوجه 1', en: 'Object-Oriented Programming 1', coef: 4, credits: 5, eval: 'TP+EX', icon: '🧱' },
+            { fr: 'Méthodes numériques', ar: 'الطرق العددية', en: 'Numerical Methods', coef: 2, credits: 4, eval: 'TP+EX', icon: '🔢' },
+            { fr: 'Probabilités et statistique 1', ar: 'الاحتمالات والإحصاء 1', en: 'Probability and Statistics 1', coef: 2, credits: 4, eval: 'TD+EX', icon: '🎲' },
+            { fr: 'Gestion de projets', ar: 'إدارة المشاريع', en: 'Project Management', coef: 1, credits: 2, eval: 'TP+EX', icon: '📋' }
+        ],
+        S4: [
+            { fr: "Système d'exploitation 1", ar: 'نظام التشغيل 1', en: 'Operating Systems 1', coef: 4, credits: 5, eval: 'TD+TP+EX', icon: '⚙️' },
+            { fr: 'Théorie des langages', ar: 'نظرية اللغات', en: 'Theory of Languages', coef: 3, credits: 5, eval: 'TD+EX', icon: '🔤' },
+            { fr: 'Bases de données', ar: 'قواعد البيانات', en: 'Databases', coef: 3, credits: 5, eval: 'TD+TP+EX', icon: '🗄️' },
+            { fr: 'Programmation orientée objet 2', ar: 'البرمجة كائنية التوجه 2', en: 'Object-Oriented Programming 2', coef: 3, credits: 5, eval: 'TP+EX', icon: '🧱' },
+            { fr: 'Programmation Linéaire', ar: 'البرمجة الخطية', en: 'Linear Programming', coef: 2, credits: 4, eval: 'TD+EX', icon: '📈' },
+            { fr: 'Probabilités et Statistique 2', ar: 'الاحتمالات والإحصاء 2', en: 'Probability and Statistics 2', coef: 2, credits: 4, eval: 'TD+EX', icon: '🎲' },
+            { fr: 'Entreprenariat', ar: 'ريادة الأعمال', en: 'Entrepreneurship', coef: 1, credits: 2, eval: 'EX', icon: '🚀' }
+        ]
+    }
+};
+// Legacy module definition (kept for backward compatibility). It is NOT part of any official semester.
+const LEGACY_MODULES = { english: { coef: 1, eval: 'EX', icon: '🗣️', tKey: 'm6' } };
+
+const T = {
+    en: { title: 'Academic Record System', subtitle: 'Official Grade Generator', personal: 'Identity', modules: 'Course Grades', name: 'Full Name', reg: 'Reg Number', major: 'Major', year: 'Year', level: 'Level', semester: 'Semester', td: 'TD', tp: 'TP', exam: 'Exam', calc: 'Generate Certificate 📜', m6: 'English 🗣️', err: 'Please fill all empty fields!', errRange: 'Grades must be between 0 and 20!', rangeMsg: 'Enter a grade between 0 and 20', errSelect: 'Please select the level and the semester first!', pickHint: 'Select the level and the semester to display the modules.', choose: 'Select…', lvlL1: 'L1 — Year 1', lvlL2: 'L2 — Year 2', visitors: 'Visitors' },
+    ar: { title: 'نظام السجل الأكاديمي', subtitle: 'مستخرج كشف النقاط الرسمي', personal: 'الهوية الشخصية', modules: 'المواد الدراسية', name: 'الاسم الكامل', reg: 'رقم التسجيل', major: 'التخصص', year: 'السنة الجامعية', level: 'المستوى', semester: 'السداسي', td: 'أعمال موجهة', tp: 'أعمال تطبيقية', exam: 'امتحان', calc: 'استخراج الشهادة 📜', m6: 'الإنجليزية 🗣️', err: 'يرجى ملء جميع الخانات الفارغة!', errRange: 'يجب أن تكون العلامات بين 0 و20!', rangeMsg: 'أدخل علامة بين 0 و20', errSelect: 'يرجى اختيار المستوى والسداسي أولاً!', pickHint: 'اختر المستوى والسداسي لعرض المواد.', choose: 'اختر…', lvlL1: 'L1 — السنة 1', lvlL2: 'L2 — السنة 2', visitors: 'الزوار' }
+};
+if (!T[lang]) lang = 'ar';
+
+const $ = (id) => document.getElementById(id);
+
+// ===== Academic integrity check (totals are computed from the data, never hardcoded) =====
+function verifyAcademicData() {
+    const report = [];
+    Object.keys(ACADEMIC_DATA).forEach(level => {
+        Object.keys(ACADEMIC_DATA[level]).forEach(sem => {
+            const mods = ACADEMIC_DATA[level][sem];
+            const coef = mods.reduce((a, m) => a + m.coef, 0);
+            const credits = mods.reduce((a, m) => a + m.credits, 0);
+            const evalOk = mods.every(m => ['TD+TP+EX', 'TD+EX', 'TP+EX', 'EX'].includes(m.eval));
+            report.push({ level, sem, modules: mods.length, coef, credits, ok: coef === 18 && credits === 30 && evalOk });
+        });
+    });
+    return report;
+}
+verifyAcademicData().forEach(r => { if (!r.ok) console.error('[academic-data] integrity error in', r); });
+
+// ===== Language / selects =====
+function setOptions(select, items, keepValue) {
+    const prev = keepValue === undefined ? select.value : keepValue;
+    select.innerHTML = '';
+    items.forEach(it => {
+        const o = document.createElement('option');
+        o.value = it.value; o.textContent = it.text;
+        select.appendChild(o);
+    });
+    if ([...select.options].some(o => o.value === prev)) select.value = prev;
+}
+function buildSelects() {
+    const t = T[lang];
+    const levelSel = $('levelInput'), semSel = $('semesterInput'), yearSel = $('yearInput');
+    setOptions(yearSel, ACADEMIC_YEARS.map(y => ({ value: y, text: y })), yearSel.value || DEFAULT_YEAR);
+    setOptions(levelSel, [{ value: '', text: t.choose }, { value: 'L1', text: t.lvlL1 }, { value: 'L2', text: t.lvlL2 }]);
+    const sems = ACADEMIC_DATA[levelSel.value] ? Object.keys(ACADEMIC_DATA[levelSel.value]) : [];
+    setOptions(semSel, [{ value: '', text: t.choose }].concat(sems.map(code => ({ value: code, text: t.semester + ' ' + code.slice(1) }))));
+    semSel.disabled = sems.length === 0;
+}
+
+function applyLang() {
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-t]').forEach(e => e.innerText = T[lang][e.dataset.t]);
+    buildSelects();
+    applyModuleNames();
+    document.querySelectorAll('input.grade').forEach(showGradeState);
+}
+function toggleLanguage() { lang = lang === 'en' ? 'ar' : 'en'; localStorage.setItem('lang', lang); applyLang(); }
+
+// ===== Visitor counter =====
+// The former provider (api.counterapi.dev/v1) is documented as decommissioned. Abacus is a free,
+// key-less counter with CORS. Change COUNTER_NAMESPACE / COUNTER_KEY to start a different counter.
+const COUNTER_NAMESPACE = 'noridev18-mi-result-hub';
+const COUNTER_KEY = 'visits';
+async function updateVisitors() {
+    const el = $('count');
+    try {
+        const response = await fetch('https://abacus.jasoncameron.dev/hit/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY, { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const n = Number(data.value);
+        if (!Number.isFinite(n)) throw new Error('Unexpected response');
+        el.innerText = n;
+    } catch (e) {
+        console.warn('[visitor-counter] unavailable:', e);
+        el.innerText = '--';
+    }
+}
+updateVisitors();
+
+// ===== Matrix background =====
+const canvas = $('bg-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+const symbols = "01<>{}[]+=-*/√π∫∑";
+const fontSize = 16;
+const columns = canvas.width / fontSize;
+const drops = Array(Math.floor(columns)).fill(1);
+
+function drawMatrix() {
+    ctx.fillStyle = "rgba(2, 6, 23, 0.1)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#d4af37"; ctx.font = fontSize + "px monospace";
+    drops.forEach((y, i) => {
+        const text = symbols[Math.floor(Math.random() * symbols.length)];
+        ctx.fillText(text, i * fontSize, y * fontSize);
+        if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+    });
+}
+setInterval(drawMatrix, 50);
+
+// ===== Modules (rebuilt from ACADEMIC_DATA) =====
+function currentModules() {
+    const l = $('levelInput').value, s = $('semesterInput').value;
+    return (ACADEMIC_DATA[l] && ACADEMIC_DATA[l][s]) || null;
+}
+const FIELD_META = { TD: { prefix: 'td', t: 'td' }, TP: { prefix: 'tp', t: 'tp' }, EX: { prefix: 'ex', t: 'exam' } };
+
+function renderModules() {
+    const box = $('defaultModules');
+    const mods = currentModules();
+    box.innerHTML = '';
+    $('modulesHint').style.display = mods ? 'none' : 'block';
+    if (!mods) return;
+    mods.forEach((m, i) => {
+        const n = i + 1;
+        const fields = m.eval.split('+').map(k => {
+            const f = FIELD_META[k];
+            return '<div><label data-t="' + f.t + '" for="' + f.prefix + n + '"></label>' +
+                '<input type="number" class="grade" id="' + f.prefix + n + '" data-kind="' + k + '" step="0.01" min="0" max="20" inputmode="decimal" aria-describedby="err-' + f.prefix + n + '">' +
+                '<small class="err-msg" id="err-' + f.prefix + n + '" aria-live="polite"></small></div>';
+        }).join('');
+        const div = document.createElement('div');
+        div.className = 'module';
+        div.innerHTML = '<div class="module-header"><div class="coef-circle">' + m.coef + '</div><h3 data-mod="' + i + '"></h3></div><div class="grid">' + fields + '</div>';
+        box.appendChild(div);
+    });
+    box.querySelectorAll('[data-t]').forEach(e => e.innerText = T[lang][e.dataset.t]);
+    applyModuleNames();
+    const grades = box.querySelectorAll('input.grade');
+    grades.forEach((g, i) => g.setAttribute('enterkeyhint', i === grades.length - 1 ? 'done' : 'next'));
+}
+function applyModuleNames() {
+    const mods = currentModules();
+    if (!mods) return;
+    document.querySelectorAll('h3[data-mod]').forEach(h => {
+        const m = mods[h.dataset.mod];
+        h.textContent = m[lang] + ' ' + m.icon;
+    });
+}
+
+// ===== Grade validation (0 <= grade <= 20) =====
+function gradeError(inp) {
+    if (inp.validity && inp.validity.badInput) return true;
+    const raw = inp.value.trim();
+    if (raw === '') return false;
+    const n = Number(raw);
+    return !Number.isFinite(n) || n < 0 || n > 20;
+}
+function showGradeState(inp) {
+    const bad = gradeError(inp);
+    const msg = inp.parentElement.querySelector('.err-msg');
+    inp.style.borderColor = bad ? 'var(--danger)' : '#334155';
+    inp.setAttribute('aria-invalid', bad ? 'true' : 'false');
+    if (msg) msg.textContent = bad ? T[lang].rangeMsg : '';
+    return !bad;
+}
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('grade')) showGradeState(e.target); });
+document.addEventListener('change', e => { if (e.target.classList && e.target.classList.contains('grade')) showGradeState(e.target); });
+
+// ===== Enter key: move to the next visible field (single delegated listener) =====
+document.addEventListener('keydown', e => {
+    if ((e.key !== 'Enter' && e.keyCode !== 13) || e.isComposing) return;
+    const el = e.target;
+    if (!el.matches || !el.matches('main input, main select')) return;
+    e.preventDefault();
+    const list = [...document.querySelectorAll('main input:not([readonly]):not([disabled]), main select:not([disabled])')].filter(x => x.offsetParent !== null);
+    const next = list[list.indexOf(el) + 1];
+    if (next) { next.focus(); if (next.tagName === 'INPUT' && next.select) next.select(); }
+    else document.querySelector('.btn-calc').focus();
+});
+
+// ===== Selection handlers =====
+$('levelInput').addEventListener('change', () => { $('semesterInput').value = ''; buildSelects(); renderModules(); });
+$('semesterInput').addEventListener('change', renderModules);
+
+// ===== Calculation =====
+// Same arithmetic as the original engine. (TD+TP)/2*0.4 + EX*0.6 is mathematically EX*0.6 + TD*0.2 + TP*0.2.
+function moduleGrade(type, g) {
+    switch (type) {
+        case 'TD+TP+EX': return ((g.td + g.tp) / 2) * 0.4 + g.ex * 0.6;
+        case 'TD+EX': return g.td * 0.4 + g.ex * 0.6;
+        case 'TP+EX': return g.tp * 0.4 + g.ex * 0.6;
+        case 'EX': return g.ex;
+    }
+    throw new Error('Unknown evaluation type: ' + type);
+}
+function semesterAverage(mods, gradesOf) {
+    let sum = 0, sumCoef = 0;
+    mods.forEach((m, i) => { sum += moduleGrade(m.eval, gradesOf(i)) * m.coef; sumCoef += m.coef; });
+    return (sum / sumCoef).toFixed(2);
+}
+
+function calculate() {
+    const t = T[lang];
+    const mods = currentModules();
+    if (!mods) { alert(t.errSelect); ($('levelInput').value ? $('semesterInput') : $('levelInput')).focus(); return; }
+
+    const allInputs = document.querySelectorAll('main input:not([readonly])');
+    let isValid = true, rangeOk = true, firstBad = null;
+    allInputs.forEach(i => {
+        if (i.offsetParent === null) return;
+        const isGrade = i.classList.contains('grade');
+        if (i.value === "" && !(isGrade && i.validity && i.validity.badInput)) {
+            isValid = false; i.style.borderColor = "var(--danger)"; firstBad = firstBad || i;
+        } else if (isGrade && !showGradeState(i)) {
+            rangeOk = false; firstBad = firstBad || i;
+        } else {
+            i.style.borderColor = "#334155";
+        }
+    });
+    if (!isValid) { alert(t.err); if (firstBad) firstBad.focus(); return; }
+    if (!rangeOk) { alert(t.errRange); if (firstBad) firstBad.focus(); return; }
+
+    const val = (prefix, n) => { const el = $(prefix + n); return el ? Number(el.value) : 0; };
+    const avg = semesterAverage(mods, i => ({ td: val('td', i + 1), tp: val('tp', i + 1), ex: val('ex', i + 1) }));
+
+    localStorage.setItem("avg", avg);
+    localStorage.setItem("name", $('studentName').value);
+    localStorage.setItem("reg", $('regNumber').value);
+    localStorage.setItem("major", $('majorInput').value);
+    localStorage.setItem("mihub_year", $('yearInput').value);
+    localStorage.setItem("mihub_level", $('levelInput').value);
+    localStorage.setItem("mihub_semester", $('semesterInput').value);
+    window.location.href = "Result.html";
+}
+
+buildSelects();
+renderModules();
+applyLang();
+window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+</script>
+</body>
+</html>
